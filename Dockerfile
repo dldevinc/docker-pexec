@@ -5,21 +5,23 @@ ARG VERSION=1.0rc8
 RUN apk --update add \
     autoconf \
     automake \
-    build-base \
-	tar \
-	texinfo
+    g++ \
+    make \
+    texinfo \
+    texlive-dvi
 
 WORKDIR /src
-ADD https://ftp.gnu.org/gnu/pexec/pexec-${VERSION}.tar.gz ./
-RUN tar -xzf pexec-${VERSION}.tar.gz
-RUN cd /src/pexec-${VERSION} && \
-	autoreconf -fiv && \
-	./configure && \
-	make && \
-	make install
+
+RUN wget -qO pexec-${VERSION}.tar.gz https://ftp.gnu.org/gnu/pexec/pexec-${VERSION}.tar.gz . \
+  && tar -xzf pexec-${VERSION}.tar.gz \
+  && cd /src/pexec-${VERSION} \
+  && autoreconf -fiv \
+  && mkdir /pexec \
+  && ./configure --prefix=/pexec \
+  && make \
+  && make install
 
 
 FROM alpine
-COPY --from=builder /usr/local/bin /usr/local/bin
-
-ENTRYPOINT ["pexec"]
+COPY --from=builder /pexec/bin/pexec /opt/pexec
+ENV PATH="$PATH:/opt/pexec/bin"
